@@ -11,6 +11,8 @@ import { AudioTrimmer } from "./AudioTrimmer";
 import { AudioEffects } from "./AudioEffects";
 import { AudioRecorder } from "./AudioRecorder";
 import { PlaylistImportExport } from "./PlaylistImportExport";
+import { WaveformEditor } from "./WaveformEditor";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -283,9 +285,10 @@ export const MusicPlayer = () => {
         <div className="grid lg:grid-cols-[1fr_400px] gap-6">
           <div className="space-y-6">
             <Tabs defaultValue="visualizer" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 glass-panel">
+              <TabsList className="grid w-full grid-cols-5 glass-panel">
                 <TabsTrigger value="visualizer">3D Visualizer</TabsTrigger>
                 <TabsTrigger value="frequency">Frequency</TabsTrigger>
+                <TabsTrigger value="waveform">Waveform</TabsTrigger>
                 <TabsTrigger value="effects">Effects</TabsTrigger>
                 <TabsTrigger value="recorder">Recorder</TabsTrigger>
               </TabsList>
@@ -302,6 +305,19 @@ export const MusicPlayer = () => {
                   analyserNode={analyserRef.current}
                   isPlaying={isPlaying}
                 />
+              </TabsContent>
+              
+              <TabsContent value="waveform" className="mt-6">
+                {currentTrack ? (
+                  <WaveformEditor
+                    track={currentTrack}
+                    onTrimUpdate={handleTrimUpdate}
+                  />
+                ) : (
+                  <Card className="glass-panel border-neon-cyan/20 p-8 text-center">
+                    <p className="text-muted-foreground">Select a track to edit waveform</p>
+                  </Card>
+                )}
               </TabsContent>
               
               <TabsContent value="effects" className="mt-6">
