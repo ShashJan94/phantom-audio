@@ -9,6 +9,8 @@ import { FrequencyAnalyzer } from "./FrequencyAnalyzer";
 import { PlaylistManager } from "./PlaylistManager";
 import { AudioTrimmer } from "./AudioTrimmer";
 import { AudioEffects } from "./AudioEffects";
+import { AudioRecorder } from "./AudioRecorder";
+import { PlaylistImportExport } from "./PlaylistImportExport";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -249,6 +251,23 @@ export const MusicPlayer = () => {
     toast.success("Track trimmed successfully");
   };
 
+  const handleSaveRecording = (file: File) => {
+    handleFilesAdded([file]);
+  };
+
+  const handlePlaylistsImport = (importedPlaylists: Playlist[]) => {
+    setPlaylists((prev) => {
+      const existingIds = new Set(prev.map(p => p.id));
+      const newPlaylists = importedPlaylists.map(p => {
+        if (existingIds.has(p.id)) {
+          return { ...p, id: `${p.id}-${Date.now()}` };
+        }
+        return p;
+      });
+      return [...prev, ...newPlaylists];
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-[1800px] mx-auto space-y-6">
@@ -264,10 +283,11 @@ export const MusicPlayer = () => {
         <div className="grid lg:grid-cols-[1fr_400px] gap-6">
           <div className="space-y-6">
             <Tabs defaultValue="visualizer" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 glass-panel">
+              <TabsList className="grid w-full grid-cols-4 glass-panel">
                 <TabsTrigger value="visualizer">3D Visualizer</TabsTrigger>
                 <TabsTrigger value="frequency">Frequency</TabsTrigger>
                 <TabsTrigger value="effects">Effects</TabsTrigger>
+                <TabsTrigger value="recorder">Recorder</TabsTrigger>
               </TabsList>
               
               <TabsContent value="visualizer" className="mt-6">
@@ -290,6 +310,10 @@ export const MusicPlayer = () => {
                   midFilter={midFilterRef.current}
                   trebleFilter={trebleFilterRef.current}
                 />
+              </TabsContent>
+              
+              <TabsContent value="recorder" className="mt-6">
+                <AudioRecorder onSaveRecording={handleSaveRecording} />
               </TabsContent>
             </Tabs>
 
@@ -350,6 +374,13 @@ export const MusicPlayer = () => {
           </div>
 
           <div className="space-y-6">
+            <div className="glass-panel rounded-xl p-4 border-neon-pink/20 neon-glow-pink">
+              <PlaylistImportExport
+                playlists={playlists}
+                onPlaylistsImport={handlePlaylistsImport}
+              />
+            </div>
+
             <PlaylistManager
               playlists={playlists}
               tracks={tracks}
