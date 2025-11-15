@@ -12,6 +12,9 @@ import { AudioEffects } from "./AudioEffects";
 import { AudioRecorder } from "./AudioRecorder";
 import { PlaylistImportExport } from "./PlaylistImportExport";
 import { WaveformEditor } from "./WaveformEditor";
+import { LyricsDisplay } from "./LyricsDisplay";
+import { AudioConverter } from "./AudioConverter";
+import { MusicSearch } from "./MusicSearch";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +27,7 @@ export interface Track {
   url: string;
   trimStart?: number;
   trimEnd?: number;
+  lyrics?: string;
 }
 
 export interface Playlist {
@@ -270,6 +274,24 @@ export const MusicPlayer = () => {
     });
   };
 
+  const handleLyricsUpdate = (trackId: string, lyrics: string) => {
+    setTracks((prev) =>
+      prev.map((t) => (t.id === trackId ? { ...t, lyrics } : t))
+    );
+    toast.success("Lyrics updated");
+  };
+
+  const handleSearchTrackPlay = (url: string, name: string) => {
+    const searchTrack: Track = {
+      id: `search-${Date.now()}`,
+      name,
+      duration: 30,
+      file: new File([], name),
+      url,
+    };
+    playTrack(searchTrack);
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-[1800px] mx-auto space-y-6">
@@ -285,12 +307,15 @@ export const MusicPlayer = () => {
         <div className="grid lg:grid-cols-[1fr_400px] gap-6">
           <div className="space-y-6">
             <Tabs defaultValue="visualizer" className="w-full">
-              <TabsList className="grid w-full grid-cols-5 glass-panel">
-                <TabsTrigger value="visualizer">3D Visualizer</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-8 glass-panel">
+                <TabsTrigger value="visualizer">Visualizer</TabsTrigger>
                 <TabsTrigger value="frequency">Frequency</TabsTrigger>
                 <TabsTrigger value="waveform">Waveform</TabsTrigger>
                 <TabsTrigger value="effects">Effects</TabsTrigger>
                 <TabsTrigger value="recorder">Recorder</TabsTrigger>
+                <TabsTrigger value="converter">Converter</TabsTrigger>
+                <TabsTrigger value="search">Search</TabsTrigger>
+                <TabsTrigger value="lyrics">Lyrics</TabsTrigger>
               </TabsList>
               
               <TabsContent value="visualizer" className="mt-6">
@@ -330,6 +355,24 @@ export const MusicPlayer = () => {
               
               <TabsContent value="recorder" className="mt-6">
                 <AudioRecorder onSaveRecording={handleSaveRecording} />
+              </TabsContent>
+
+              <TabsContent value="converter" className="mt-6">
+                <AudioConverter />
+              </TabsContent>
+
+              <TabsContent value="search" className="mt-6">
+                <MusicSearch onPlayTrack={handleSearchTrackPlay} />
+              </TabsContent>
+
+              <TabsContent value="lyrics" className="mt-6">
+                <LyricsDisplay
+                  trackId={currentTrack?.id || null}
+                  trackName={currentTrack?.name || null}
+                  currentTime={currentTime}
+                  lyrics={currentTrack?.lyrics}
+                  onLyricsUpdate={handleLyricsUpdate}
+                />
               </TabsContent>
             </Tabs>
 
