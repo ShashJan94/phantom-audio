@@ -21,7 +21,9 @@ export const FrequencyAnalyzer = ({ analyserNode, isPlaying }: FrequencyAnalyzer
 
     const draw = () => {
       if (!isPlaying) {
-        animationRef.current = requestAnimationFrame(draw);
+        // Clear canvas when not playing
+        ctx.fillStyle = "rgba(10, 10, 15, 1)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         return;
       }
 
@@ -56,7 +58,14 @@ export const FrequencyAnalyzer = ({ analyserNode, isPlaying }: FrequencyAnalyzer
       animationRef.current = requestAnimationFrame(draw);
     };
 
-    draw();
+    // Start animation loop only when playing
+    if (isPlaying) {
+      draw();
+    } else {
+      // Clear canvas when not playing
+      ctx.fillStyle = "rgba(10, 10, 15, 1)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     return () => {
       if (animationRef.current) {
