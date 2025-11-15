@@ -11,25 +11,28 @@ interface AudioVisualizerProps {
 function DancingBlocks({ analyserNode, isPlaying }: { analyserNode: AnalyserNode | null; isPlaying: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const meshesRef = useRef<THREE.Mesh[]>([]);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   useEffect(() => {
     if (analyserNode) {
       const bufferLength = analyserNode.frequencyBinCount;
-      dataArrayRef.current = new Uint8Array(bufferLength);
+      dataArrayRef.current = new Uint8Array(bufferLength) as Uint8Array<ArrayBuffer>;
     }
   }, [analyserNode]);
 
   useFrame(() => {
-    if (!analyserNode || !isPlaying || !dataArrayRef.current) return;
+    if (!analyserNode || !dataArrayRef.current) return;
 
+    // Get frequency data even when not playing (for smooth transitions)
     analyserNode.getByteFrequencyData(dataArrayRef.current as any);
     
     meshesRef.current.forEach((mesh, i) => {
       const dataIndex = Math.floor((i / meshesRef.current.length) * dataArrayRef.current!.length);
-      const value = dataArrayRef.current![dataIndex] / 255;
+      const value = isPlaying ? dataArrayRef.current![dataIndex] / 255 : 0;
       
-      mesh.scale.y = 0.5 + value * 3;
+      // Smooth animation
+      const targetScale = 0.5 + value * 3;
+      mesh.scale.y += (targetScale - mesh.scale.y) * 0.1;
       mesh.position.y = (mesh.scale.y - 1) / 2;
       
       const hue = (i / meshesRef.current.length) * 360;
@@ -37,7 +40,7 @@ function DancingBlocks({ analyserNode, isPlaying }: { analyserNode: AnalyserNode
       (mesh.material as THREE.MeshStandardMaterial).emissive.setHSL(hue / 360, 1, value * 0.5);
     });
 
-    if (groupRef.current) {
+    if (groupRef.current && isPlaying) {
       groupRef.current.rotation.y += 0.005;
     }
   });
@@ -79,7 +82,17 @@ function DancingBlocks({ analyserNode, isPlaying }: { analyserNode: AnalyserNode
 export const AudioVisualizer = ({ analyserNode, isPlaying }: AudioVisualizerProps) => {
   return (
     <div className="glass-panel rounded-xl overflow-hidden border-neon-purple/20 neon-glow-purple" style={{ height: "500px" }}>
-      <Canvas camera={{ position: [0, 10, 20], fov: 60 }}>
+      <Canvas 
+        camera={{ position: [0, 10, 20], fov: 60 }}
+        gl={{ 
+          antialias: true,
+          alpha: true,
+          powerPreference: "high-performance"
+        }}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#0a0a0f');
+        }}
+      >
         <color attach="background" args={["#0a0a0f"]} />
         <ambientLight intensity={0.3} />
         <pointLight position={[10, 10, 10]} intensity={1} color="#00ffff" />

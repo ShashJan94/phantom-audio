@@ -151,9 +151,16 @@ export const MusicPlayer = () => {
     toast.success(`Added ${files.length} track${files.length > 1 ? 's' : ''}`);
   };
 
-  const playTrack = (track: Track) => {
+  const playTrack = async (track: Track) => {
     if (audioRef.current && audioContextRef.current) {
       const audio = audioRef.current;
+      const audioContext = audioContextRef.current;
+      
+      // Resume audio context if suspended
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
       audio.src = track.url;
       
       if (track.trimStart) {
@@ -162,7 +169,7 @@ export const MusicPlayer = () => {
 
       // Connect audio nodes
       if (!sourceRef.current) {
-        const source = audioContextRef.current.createMediaElementSource(audio);
+        const source = audioContext.createMediaElementSource(audio);
         sourceRef.current = source;
         
         source
@@ -171,23 +178,32 @@ export const MusicPlayer = () => {
           .connect(trebleFilterRef.current!)
           .connect(gainNodeRef.current!)
           .connect(analyserRef.current!)
-          .connect(audioContextRef.current.destination);
+          .connect(audioContext.destination);
       }
 
-      audio.play();
-      setCurrentTrack(track);
-      setIsPlaying(true);
+      try {
+        await audio.play();
+        setCurrentTrack(track);
+        setIsPlaying(true);
+      } catch (error) {
+        console.error("Playback error:", error);
+        toast.error("Failed to play track");
+      }
     }
   };
 
-  const handlePlayPause = () => {
+  const handlePlayPause = async () => {
     if (!audioRef.current || !currentTrack) return;
 
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play();
+      // Resume audio context if suspended
+      if (audioContextRef.current?.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+      await audioRef.current.play();
       setIsPlaying(true);
     }
   };
