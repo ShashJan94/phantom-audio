@@ -281,15 +281,29 @@ export const MusicPlayer = () => {
     toast.success("Lyrics updated");
   };
 
-  const handleSearchTrackPlay = (url: string, name: string) => {
-    const searchTrack: Track = {
-      id: `search-${Date.now()}`,
-      name,
-      duration: 30,
-      file: new File([], name),
-      url,
-    };
-    playTrack(searchTrack);
+  const handleSearchTrackPlay = async (url: string, name: string) => {
+    try {
+      // Fetch the audio file from the preview URL
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const file = new File([blob], `${name}.m4a`, { type: 'audio/mp4' });
+      
+      const searchTrack: Track = {
+        id: `search-${Date.now()}`,
+        name,
+        duration: 30,
+        file,
+        url: URL.createObjectURL(blob),
+      };
+      
+      // Add to tracks list so it's manageable
+      setTracks((prev) => [...prev, searchTrack]);
+      playTrack(searchTrack);
+      toast.success(`Playing: ${name}`);
+    } catch (error) {
+      console.error("Failed to load preview:", error);
+      toast.error("Failed to play preview. This might be due to CORS restrictions.");
+    }
   };
 
   return (
